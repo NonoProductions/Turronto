@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Turret-Weltkugel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #121212;
+      color: #fff;
+      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    body {
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Globus mehr nach links gerückt */
+    #globeWrapper {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;  /* Rechtsbündig im Flexcontainer */
+      width: 60vw;
+      height: 100vh;
+      position: absolute;
+      left: 5vw;  /* verschiebt ihn etwas nach links */
+      top: 0;
+      pointer-events: none; /* damit Menü klickbar bleibt */
+    }
+    #globeViz {
+      width: 50vw;
+  height: 50vw;
+  max-width: 90vw;
+  max-height: 94vh;
+      display: block;
+      background: none;
+      pointer-events: auto;
+    }
+    .close-btn {
+      position: absolute;
+      top: 24px;
+      right: 38px;
+      z-index: 10;
+      font-size: 19px;
+      padding: 10px 21px;
+      border-radius: 16px;
+      border: none;
+      background: #232323ee;
+      color: #ff9800;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      letter-spacing: 1px;
+      font-family: inherit;
+      box-shadow: 0 2px 10px #0004;
+    }
+    .close-btn:hover {
+      background: #292929;
+      color: #fff;
+    }
+    .turret-menu {
+      position: absolute;
+      top: 60px;
+      left: 42px;
+      z-index: 5;
+      background: #222b;
+      padding: 28px 30px 16px 30px;
+      border-radius: 20px;
+      min-width: 210px;
+      max-width: 350px;
+      box-shadow: 0 7px 22px #000a, 0 1px 0 #ff980044 inset;
+      max-height: 85vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border: 1.4px solid #2e2e2e;
+      backdrop-filter: blur(2.5px);
+      font-size: 1em;
+    }
+    .turret-menu-title {
+      margin: 0 0 14px 0;
+      text-align: center;
+      font-size: 1.6em;
+      letter-spacing: 1.1px;
+      color: #ff9800;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .turret-count-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ff9800;
+      color: #222;
+      border-radius: 50%;
+      min-width: 34px;
+      height: 34px;
+      font-size: 1em;
+      font-weight: 700;
+      margin-left: 8px;
+      box-shadow: 0 1px 7px #0002;
+      letter-spacing: 1px;
+      position: relative;
+      top: 0;
+    }
+    .turret-menu ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+    }
+    .turret-item {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 14px;
+      padding: 13px 10px 11px 10px;
+      margin-bottom: 5px;
+      border-radius: 13px;
+      cursor: pointer;
+      font-size: 1.07em;
+      transition: background 0.15s, color 0.15s, box-shadow 0.13s;
+      border: 1.3px solid transparent;
+      background: none;
+      position: relative;
+      font-family: inherit;
+    }
+    .turret-item:last-child {
+      margin-bottom: 0;
+    }
+    .turret-item:hover, .turret-item:active {
+      background: linear-gradient(90deg, #ff980025 0%, #28211c 100%);
+      color: #fff;
+      border-color: #ff9800a0;
+      box-shadow: 0 1px 7px #ff980016;
+    }
+    .turret-item.active {
+      background: linear-gradient(90deg, #ff980045 0%, #2e2416 100%);
+      color: #fff;
+      border-color: #ff9800cc;
+      font-weight: 700;
+      box-shadow: 0 2px 9px #ff980024;
+    }
+    .turret-name {
+      font-size: 1.07em;
+      color: #ffdbaa;
+      text-align: left;
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      line-height: 1.14;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <button class="close-btn" onclick="window.close()">Schließen</button>
+  <div id="turretMenu" class="turret-menu"></div>
+  <div id="globeWrapper">
+    <div id="globeViz"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.34.3/dist/globe.gl.min.js"></script>
+  <script>
+    // Exakte Standorte wie zuvor
+    const turrets = [
+      { id: 1, name: 'Luxemburg Stadt', lat: 49.6116, lng: 6.1319 },
+      { id: 2, name: 'Echternach', lat: 49.8112, lng: 6.4191 },
+      { id: 3, name: 'Berlin Mitte', lat: 52.5208, lng: 13.4095 },
+      { id: 4, name: 'Tokyo Akihabara', lat: 35.6987, lng: 139.7742 }
+    ];
+
+    // Menü generieren
+    function createTurretMenu(turrets, onClick) {
+      const menu = document.getElementById('turretMenu');
+      menu.innerHTML = `
+        <div class="turret-menu-title">
+          Turrets
+          <span class="turret-count-badge">${turrets.length}</span>
+        </div>
+        <ul>
+          ${turrets.map(t => `
+            <li class="turret-item" data-id="${t.id}">
+              <span class="turret-name">${t.name}</span>
+            </li>
+          `).join('')}
+        </ul>
+      `;
+      let activeTurretId = null;
+      menu.querySelectorAll('.turret-item').forEach(li => {
+        li.addEventListener('click', () => {
+          const id = li.getAttribute('data-id');
+          const turret = turrets.find(t => t.id == id);
+          if (turret) {
+            onClick(turret);
+            menu.querySelectorAll('.turret-item').forEach(i => i.classList.remove('active'));
+            li.classList.add('active');
+            activeTurretId = id;
+          }
+        });
+      });
+      setTimeout(()=>{
+        const first = menu.querySelector('.turret-item');
+        if(first) first.classList.add('active');
+      }, 50);
+    }
+
+    // Nur gelbe 2D Punkte auf dem Globus, kein 3D-Effekt
+    const earthImg = "http://localhost:8000/Downloads/Weltkarte_final.png";
+
+
+
+    const world = Globe()
+      .globeImageUrl(earthImg)
+      .backgroundColor('#121212')
+      .atmosphereColor('#ff9800')
+      .atmosphereAltitude(0.18)
+      .pointsData(turrets)
+      .pointLat(d => d.lat)
+      .pointLng(d => d.lng)
+      .pointColor(() => '#ff9800')
+      .pointRadius(0.52)
+      .pointAltitude(0) // <-- FLACH auf die Kugel, kein 3D!
+      .onPointClick(turret => {
+        alert(`Turret "${turret.name}" ausgewählt!`);
+      })
+      .pointOfView({lat: 49.8, lng: 9, altitude: 2.2}, 1000);
+
+    world(document.getElementById('globeViz'));
+
+    setTimeout(() => {
+      if (world.controls()) {
+        world.controls().autoRotate = true;
+        world.controls().autoRotateSpeed = 0.35;
+      }
+    }, 1200);
+
+    // Menü-Handler
+    createTurretMenu(turrets, turret => {
+      world.pointOfView({
+        lat: turret.lat,
+        lng: turret.lng,
+        altitude: 1.4
+      }, 900);
+    });
+  </script>
+</body>
+</html>
